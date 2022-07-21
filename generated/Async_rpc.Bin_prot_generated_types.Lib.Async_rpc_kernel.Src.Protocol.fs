@@ -260,6 +260,7 @@ module Rpc_result = struct
         (bin_reader_t (bin_a : _ Bin_prot.Type_class.t).reader)
     }
 end
+(*TODO*)
 module Query = struct
   type 'a needs_length = {
     tag: Rpc_tag.t ;
@@ -325,6 +326,7 @@ module Query = struct
     }
 end
 module Response = struct
+(*TODO*)
   type 'a needs_length = {
     id: Query_id.t ;
     data: 'a Rpc_result.t }
