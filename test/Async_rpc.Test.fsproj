@@ -25,16 +25,22 @@
     <Compile Include="Transport_test.fs" />
     <Compile Include="Connection_test.fs" />
     <Compile Include="Rpc_test.fs" />
+    <Compile Include="Server_test.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\bin_prot\src\Bin_prot.fsproj" />
-    <ProjectReference Include="..\..\generated_types\bin_prot_generated_types\Bin_prot_generated_types.fsproj" />
+    <ProjectReference Include="..\..\fsharp_bin_prot\src\Bin_prot.fsproj" />
+    <ProjectReference Include="..\generated\Async_rpc.Bin_prot_generated_types.fsproj" />
     <ProjectReference Include="..\src\Async_rpc.fsproj" />
-    <ProjectReference Include="..\..\core_kernel\src\Core_kernel.fsproj" />
+    <ProjectReference Include="..\..\fsharp_core_kernel\src\Core_kernel.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="nunit" Version="3.13.2" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+    <!--<PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>-->
   </ItemGroup>
 </Project>

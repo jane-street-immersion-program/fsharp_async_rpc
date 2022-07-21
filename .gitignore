@@ -2,4 +2,8 @@ _build
 *.install
 *.merlin
 _opam
-
+*/bin
+*/obj
+*/ModuleSignatures.generated
+**/bin
+**/obj
