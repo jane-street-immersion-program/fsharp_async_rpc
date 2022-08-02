@@ -321,7 +321,6 @@ let create
                   time_source = time_source
                   implementations = implementation_dict }
                 |> Sequencer.create
-
             Transport.Writer.set_close_finished_callback transport.writer (fun close_reason ->
                 Sequencer.with_ t (fun t -> cleanup t (Transport.Close_reason.errorf "Writer stopped: %A" close_reason)))
             //does handshake
