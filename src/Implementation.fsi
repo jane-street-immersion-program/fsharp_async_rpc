@@ -2,10 +2,7 @@ module Async_rpc.Implementation
 open Core_kernel
 open Async_rpc.Protocol
 open Bin_prot.Common
-(* CR hleung for ashah: what to do with result_mode?? *)
 type 'connection_state t
-(*Response may change to result*)
-// todo: make sure these types are correct, especially the apply
 val create:
     ('query Bin_prot.Type_class.reader) ->
     ('connection_state -> 'query -> 'response) ->

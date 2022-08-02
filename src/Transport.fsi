@@ -70,7 +70,6 @@ module Writer =
 
     module For_testing =
         val wait_for_flushed: t -> unit
-(*TODO clean up prints asnd make better variables, add an interface to server fs for clustom servers (meaning what? custom IP's? custom rpc's? custom what), test spins up server and sends multiple clients *)
 type t = { writer: Writer.t; reader: Reader.t }
 
 val create: System.IO.Stream -> {| max_message_size: int |} -> t Or_error.t

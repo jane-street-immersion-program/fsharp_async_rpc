@@ -29,7 +29,6 @@ let start_client_with_implementations port implementation_list =
                     Async_rpc.Rpc.create {| name = "Rpc"; version = 9 |} Type_class.bin_string Type_class.bin_string
 
                 match
-                    //we set tcs in the callback not in whether or not the dispatch suceeded
                     Async_rpc.Rpc.dispatch Rpc connections "Hello" (fun result ->
                         match result with
                         | Error error -> dispatch_tcs.SetResult(Error(Protocol.Rpc_error.to_error (error)))
@@ -103,10 +102,8 @@ let start_client port =
 
 let start_server () =
     let time = new Time_source.Wall_clock.t ()
-    //todo is this where we can make a while true loop to test multi-threading with clients?
     let implementation_fun =
         (fun _foo _bar ->
-            printf "a"
 
             while true do
                 ())
@@ -180,7 +177,7 @@ let ``Test query`` () =
     | Error error -> failwithf "%A" error
     | Ok ok ->
         match ok with
-        | "Hello hi" -> printf ("pASSEDDDDD")
+        | "Hello hi" ->() 
         | _ -> failwith "did not append"
 
     ()

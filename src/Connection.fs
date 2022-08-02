@@ -155,25 +155,9 @@ let handle_response (T t) (response: _ Response.t) read_buffer read_buffer_pos_r
 
 let handle_msg (T t) msg read_buffer read_buffer_pos_ref : _ Transport.Handler_result.t =
     match msg with
-    //question: how do we know what type the msg is?
     | Message.t.Heartbeat -> Transport.Handler_result.Continue
     | Message.t.Response response -> handle_response (T t) response read_buffer read_buffer_pos_ref
 
-    (*Result.let_syntax {
-          let! len = response.data
-
-          let data =
-            Bin_prot_reader.read_and_verify_length
-              t.bin_response.reader
-              None
-              read_buffer
-              read_buffer_pos_ref
-              len
-              "client-side rpc response un-bin-io'ing"
-
-          return! data
-        }*)
-    (*TODO*)
     | Message.t.Query query ->
         // In OCaml this raises because there are no implementations and the default
         // behaviour is to throw an exception that gets consumed by an error stream
@@ -191,8 +175,6 @@ let handle_msg (T t) msg read_buffer read_buffer_pos_ref : _ Transport.Handler_r
             | Some foo ->
 
                 let result =
-                    //spawned thread to handle each implementationwith Async.start, move to implementation and start thread before we start f so that if we cant parse through the query we can still send an error, if w
-                    //start the thread here there is a risk of not being able to send an error
                     Implementation.apply foo () query read_buffer read_buffer_pos_ref t.writer
 
                 match result with
@@ -240,24 +222,18 @@ let heartbeat_now (T t) =
             |> Transport.Send_result.to_or_error)
 
 let heartbeat_periodically (T t) =
-    //when what was last_seen_alive? client or server?
     update_last_seen_alive (T t)
-
     let rec loop_until_error () =
         match heartbeat_now (T t) with
         | Ok () ->
-            //question: this should make t unavailable for other threads, but doesnt because time_source is thread safe, why is that ?
-
             // Though this access breaks the lock, [Time_source] is thread-safe and this
             // access doesn't break any transaction promises we make.
             (Sequencer.with_ t (fun t -> t.time_source))
                 .sleep_for send_heartbeat_every
-            //question: making it tail recursive makes it so that the stack doesnt overflow
             loop_until_error ()
         | Error e -> e
 
     let e = loop_until_error ()
-    //if it ever gets to this point, we know the heatbeat has ended because this is after the recursive call
     Sequencer.with_ t (fun t -> cleanup t (Transport.Close_reason.errorf "Heartbeat thread stopped: %A" e))
 
 let close_outstanding_queries open_queries =
@@ -270,7 +246,6 @@ let close_outstanding_queries open_queries =
 
             response_handler
                 ({ id = query_id
-                   // todo why is this what's getting returned
                    data = Error Rpc_error.t.Connection_closed }: _ Response.t)
                 dummy_buffer
                 dummy_ref
@@ -279,7 +254,6 @@ let close_outstanding_queries open_queries =
 
 let run_after_handshake (T t) reader =
     let result =
-        //question: reads the stream and if there is a message it calls on message and also updates when the client was last seen alive
         Transport.Reader.read_forever reader (on_message (T t)) (fun () -> update_last_seen_alive (T t))
 
     let reason =
@@ -297,11 +271,7 @@ let create
     (time_source: Time_source.t)
     protocol
     (args: {| max_message_size: int |})
-    //this f is not the same as the one passed to the rpc create
     f
-    //TODO: turn this into a dictionary, do we need to itereate over this list regardless because we need to get each tag and version from the implementation.t anyway
-    //so we cant just pass this list into the dict
-    //is there a way to seperate
     (implementations: unit Implementation.t list)
     =
     let implementation_dict = new Dictionary<Rpc_tag.t * int64, unit Implementation.t>()
@@ -312,7 +282,6 @@ let create
     let create_and_handshake () =
         Result.let_syntax {
             let! transport = Transport.create stream args
-            //creates t as a T of t using the sequencer so that we can lock t if needed to avoid having two different threads accessing it at once
             let t =
                 { writer = transport.writer
                   open_state = Transport.Open_state.Open
@@ -321,10 +290,8 @@ let create
                   time_source = time_source
                   implementations = implementation_dict }
                 |> Sequencer.create
-
             Transport.Writer.set_close_finished_callback transport.writer (fun close_reason ->
                 Sequencer.with_ t (fun t -> cleanup t (Transport.Close_reason.errorf "Writer stopped: %A" close_reason)))
-            //does handshake
             match do_handshake_with_timeout transport protocol with
             | Ok () -> return (T t, transport.reader)
             | Error error ->
@@ -332,17 +299,13 @@ let create
 
                 return! Or_error.Error.format "Handshake error: %A" error
         }
-    //thread is started that will run the function/ be the heartbeat loop
     Thread.spawn_and_ignore "connect then heartbeat loop" (fun () ->
-        //create_and_handshake
         match create_and_handshake () with
-        //if handshake was successful, spawn reader loop
         | Ok (t, reader) ->
             Thread.spawn_and_ignore "reader loop" (fun () -> run_after_handshake t reader)
             f (Ok t)
             heartbeat_periodically t
         | Error error ->
-            printfn "hello"
             f (Error error))
 
 module For_testing =
