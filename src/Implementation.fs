@@ -15,6 +15,10 @@ type 'connection_state t =
           -> pos_ref
           -> Transport.Writer.t
           -> Result.t<unit, Rpc_error.t>
+<<<<<<< HEAD
+=======
+    (*; implement: ('connection_state -> Buffer.t -> Buffer.t)*)
+>>>>>>> ec23e7a927aa331442e8fa83058b083345c54c1d
      }
 
 let real_function
@@ -30,6 +34,10 @@ let real_function
     Result.let_syntax {
         let! query_ =
             let len = query.data
+<<<<<<< HEAD
+=======
+            (*Binary info turned into info f sharp can use*)
+>>>>>>> ec23e7a927aa331442e8fa83058b083345c54c1d
             Bin_prot_reader.read_and_verify_length
                 query_reader
                 None
@@ -37,7 +45,10 @@ let real_function
                 read_buffer_pos_ref
                 len
                 "client-side rpc response un-bin-io'ing"
+<<<<<<< HEAD
 
+=======
+>>>>>>> ec23e7a927aa331442e8fa83058b083345c54c1d
 
         task {
             let (resp: Or_error.t<'response>) =
@@ -64,6 +75,11 @@ let real_function
 
         return ()
     }
+<<<<<<< HEAD
+=======
+
+(*This will return the function that needs the remaining arguments to complete real_function, if we call this in connection anyway how are we any better off since the function returns the function needing more arguments in connection*)
+>>>>>>> ec23e7a927aa331442e8fa83058b083345c54c1d
 let apply t connection_state (query: Bin_prot.Nat0.t Query.t) read_buffer read_buffer_pos_ref transport =
     t.partial_fun connection_state query read_buffer read_buffer_pos_ref transport
 

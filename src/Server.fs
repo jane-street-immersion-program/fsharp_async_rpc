@@ -14,6 +14,10 @@ let writeToSocket time implementation_list connection_callback (socket: Socket) 
     let stream = new NetworkStream(socket) :> System.IO.Stream
 
     Async_rpc.Connection.create
+<<<<<<< HEAD
+=======
+        //steam is the only clear difference between the client and the server
+>>>>>>> ec23e7a927aa331442e8fa83058b083345c54c1d
         stream
         time
         Async_rpc.Known_protocol.Rpc
@@ -52,8 +56,16 @@ let create_without_port
     t
 
 let create port local time implementation_list connection_callback =
+<<<<<<< HEAD
     let listener = new TcpListener(localaddr = local, port = port)
     listener.Start()
+=======
+    //ip port, implementatsion, protocol, time source
+//todo support different protocols and implementations
+    let listener = new TcpListener(localaddr = local, port = port)
+    listener.Start()
+    printfn "%i is the port" port
+>>>>>>> ec23e7a927aa331442e8fa83058b083345c54c1d
     let t = { port = port }
 
     async {
