@@ -6,11 +6,11 @@ open Core_kernel
 /// end of a pair makes data available to read from the other end.
 [<SealedAttribute>]
 type t =
-    class
-        inherit System.IO.Stream
+  class
+    inherit System.IO.Stream
 
-        member is_closed: unit -> bool
-        member set_exn_on_write: System.Exception option -> unit
-    end
+    member is_closed : unit -> bool
+    member set_exn_on_write : System.Exception option -> unit
+  end
 
-val make_pair: Time_source.t -> t * t
+val make_pair : Time_source.t -> t * t

@@ -5,4 +5,4 @@ open Bin_prot.Common
 
 type 'a t = 'a Type_class.reader
 
-val expect: t: 'a Type_class.reader -> expected: 'a -> buf -> pos_ref -> unit
+val expect : t : 'a Type_class.reader -> expected : 'a -> buf -> pos_ref -> unit

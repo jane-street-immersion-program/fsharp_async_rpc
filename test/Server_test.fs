@@ -14,170 +14,187 @@ open NUnit.Framework
 open System.Threading
 
 let start_client_with_implementations port implementation_list =
-    let dispatch_tcs = new TaskCompletionSource<Or_error.t<string>>()
-    let client = new TcpClient("127.0.0.1", port)
-    let stream = client.GetStream() :> System.IO.Stream
-    let time = new Time_source.Wall_clock.t ()
-    let wait = new Auto_reset_event.t false
+  let dispatch_tcs = new TaskCompletionSource<Or_error.t<string>>()
+  let client = new TcpClient("127.0.0.1", port)
+  let stream = client.GetStream() :> System.IO.Stream
+  let time = new Time_source.Wall_clock.t ()
+  let wait = new Auto_reset_event.t false
 
-    let connection_callback =
-        (fun connection ->
-            match connection with
-            | Error _error -> failwith "Connection failed"
-            | Ok connections ->
-                let Rpc =
-                    Async_rpc.Rpc.create {| name = "Rpc"; version = 9 |} Type_class.bin_string Type_class.bin_string
+  let connection_callback =
+    (fun connection ->
+      match connection with
+      | Error _error -> failwith "Connection failed"
+      | Ok connections ->
+        let Rpc =
+          Async_rpc.Rpc.create
+            {| name = "Rpc"; version = 9 |}
+            Type_class.bin_string
+            Type_class.bin_string
 
-                match
-                    Async_rpc.Rpc.dispatch Rpc connections "Hello" (fun result ->
-                        match result with
-                        | Error error -> dispatch_tcs.SetResult(Error(Protocol.Rpc_error.to_error (error)))
-                        | Ok ok -> dispatch_tcs.SetResult(Ok ok)
+        match
+          Async_rpc.Rpc.dispatch Rpc connections "Hello" (fun result ->
+            match result with
+            | Error error ->
+              dispatch_tcs.SetResult(Error(Protocol.Rpc_error.to_error (error)))
+            | Ok ok -> dispatch_tcs.SetResult(Ok ok)
 
-                        Auto_reset_event.set wait)
-                    with
-                | Error _error -> failwith "Dispatch failed"
-                | Ok () -> ()
+            Auto_reset_event.set wait)
+          with
+        | Error _error -> failwith "Dispatch failed"
+        | Ok () -> ()
 
-            ())
+      ())
 
-    task {
-        Async_rpc.Connection.create
-            stream
-            time
-            Async_rpc.Known_protocol.Rpc
-            {| max_message_size = Async_rpc.Transport.default_max_message_size |}
-            connection_callback
-            implementation_list
-    }
-    |> ignore
+  task {
+    Async_rpc.Connection.create
+      stream
+      time
+      Async_rpc.Known_protocol.Rpc
+      {| max_message_size = Async_rpc.Transport.default_max_message_size |}
+      connection_callback
+      implementation_list
+  }
+  |> ignore
 
-    dispatch_tcs
+  dispatch_tcs
 
 let start_client port =
-    let dispatch_tcs = new TaskCompletionSource<Or_error.t<unit>>()
-    let client = new TcpClient("127.0.0.1", port)
+  let dispatch_tcs = new TaskCompletionSource<Or_error.t<unit>>()
+  let client = new TcpClient("127.0.0.1", port)
 
-    let stream = client.GetStream() :> System.IO.Stream
-    let time = new Time_source.Wall_clock.t ()
-    let wait = new Auto_reset_event.t false
+  let stream = client.GetStream() :> System.IO.Stream
+  let time = new Time_source.Wall_clock.t ()
+  let wait = new Auto_reset_event.t false
 
-    let connection_callback =
-        (fun connection ->
-            match connection with
-            | Error error -> dispatch_tcs.SetResult(Error error)
-            | Ok connections ->
-                let Rpc =
-                    Async_rpc.Rpc.create {| name = "Rpc"; version = 9 |} Type_class.bin_string Type_class.bin_string
+  let connection_callback =
+    (fun connection ->
+      match connection with
+      | Error error -> dispatch_tcs.SetResult(Error error)
+      | Ok connections ->
+        let Rpc =
+          Async_rpc.Rpc.create
+            {| name = "Rpc"; version = 9 |}
+            Type_class.bin_string
+            Type_class.bin_string
 
-                match
-                    Async_rpc.Rpc.dispatch Rpc connections "hi from the client" (fun result ->
-                        printfn "%A" result
-                        Auto_reset_event.set wait)
-                    with
-                | Error error -> dispatch_tcs.SetResult(Error error)
-                | Ok () -> dispatch_tcs.SetResult(Ok())
+        match
+          Async_rpc.Rpc.dispatch Rpc connections "hi from the client" (fun result ->
+            printfn "%A" result
+            Auto_reset_event.set wait)
+          with
+        | Error error -> dispatch_tcs.SetResult(Error error)
+        | Ok () -> dispatch_tcs.SetResult(Ok())
 
-            ())
+      ())
 
-    let implementation_f = (fun _foo _bar -> ())
+  let implementation_f = (fun _foo _bar -> ())
 
-    task {
-        Async_rpc.Connection.create
-            stream
-            time
-            Async_rpc.Known_protocol.Rpc
-            {| max_message_size = Async_rpc.Transport.default_max_message_size |}
-            connection_callback
-            [ Async_rpc.Implementation.create
-                  Type_class.bin_unit.reader
-                  implementation_f
-                  Type_class.bin_unit.writer
-                  "Rpc"
-                  9 ]
-    }
-    |> ignore
+  task {
+    Async_rpc.Connection.create
+      stream
+      time
+      Async_rpc.Known_protocol.Rpc
+      {| max_message_size = Async_rpc.Transport.default_max_message_size |}
+      connection_callback
+      [ Async_rpc.Implementation.create
+          Type_class.bin_unit.reader
+          implementation_f
+          Type_class.bin_unit.writer
+          "Rpc"
+          9 ]
+  }
+  |> ignore
 
-    dispatch_tcs
+  dispatch_tcs
 
 let start_server () =
-    let time = new Time_source.Wall_clock.t ()
-    let implementation_fun =
-        (fun _foo _bar ->
+  let time = new Time_source.Wall_clock.t ()
 
-            while true do
-                ())
+  let implementation_fun =
+    (fun _foo _bar ->
 
-    let local_ip = IPAddress.Parse "127.0.0.1"
-    let rpc_name = "Rpc"
-    let rpc_version = 9
+      while true do
+        ())
 
-    let implementation_list =
-        [ Async_rpc.Implementation.create
-              Type_class.bin_string.reader
-              implementation_fun
-              Type_class.bin_unit.writer
-              rpc_name
-              rpc_version ]
+  let local_ip = IPAddress.Parse "127.0.0.1"
+  let rpc_name = "Rpc"
+  let rpc_version = 9
 
-    let connection_callback =
-        (fun connection ->
-            match connection with
-            | Error error -> failwithf "Connection failed%A" error |> ignore
-            | Ok _connections -> ())
+  let implementation_list =
+    [ Async_rpc.Implementation.create
+        Type_class.bin_string.reader
+        implementation_fun
+        Type_class.bin_unit.writer
+        rpc_name
+        rpc_version ]
 
-    Async_rpc.Server.create_without_port local_ip time implementation_list connection_callback
+  let connection_callback =
+    (fun connection ->
+      match connection with
+      | Error error -> failwithf "Connection failed%A" error |> ignore
+      | Ok _connections -> ())
+
+  Async_rpc.Server.create_without_port
+    local_ip
+    time
+    implementation_list
+    connection_callback
 
 
 let start_server_with_implementations implementation_list =
-    let time = new Time_source.Wall_clock.t ()
+  let time = new Time_source.Wall_clock.t ()
 
-    let local_ip = IPAddress.Parse "127.0.0.1"
+  let local_ip = IPAddress.Parse "127.0.0.1"
 
-    let connection_callback =
-        (fun connection ->
-            match connection with
-            | Error error -> failwithf "Connection failed%A" error |> ignore
-            | Ok _connections -> ())
+  let connection_callback =
+    (fun connection ->
+      match connection with
+      | Error error -> failwithf "Connection failed%A" error |> ignore
+      | Ok _connections -> ())
 
-    Async_rpc.Server.create_without_port local_ip time implementation_list connection_callback
+  Async_rpc.Server.create_without_port
+    local_ip
+    time
+    implementation_list
+    connection_callback
 
 [<Test>]
 let ``Test Server`` () =
 
-    let server = start_server ()
-    let client1_tcs = start_client server.port
-    let client2_tcs = start_client server.port
+  let server = start_server ()
+  let client1_tcs = start_client server.port
+  let client2_tcs = start_client server.port
 
-    match client1_tcs.Task.Result with
-    | Error error -> failwithf "%A" error
-    | Ok _ok -> ()
+  match client1_tcs.Task.Result with
+  | Error error -> failwithf "%A" error
+  | Ok _ok -> ()
 
-    match client2_tcs.Task.Result with
-    | Error error -> failwithf "%A" error
-    | Ok _ok -> ()
+  match client2_tcs.Task.Result with
+  | Error error -> failwithf "%A" error
+  | Ok _ok -> ()
 
-    ()
+  ()
 
 [<Test>]
 let ``Test query`` () =
-    let implementation_f = (fun _foo bar -> bar + " hi")
-    let implementation_list =
-        [ Async_rpc.Implementation.create
-              Type_class.bin_string.reader
-              implementation_f
-              Type_class.bin_string.writer
-              "Rpc"
-              9 ]
+  let implementation_f = (fun _foo bar -> bar + " hi")
 
-    let server = start_server_with_implementations implementation_list
-    let client1_tcs = start_client_with_implementations server.port implementation_list
+  let implementation_list =
+    [ Async_rpc.Implementation.create
+        Type_class.bin_string.reader
+        implementation_f
+        Type_class.bin_string.writer
+        "Rpc"
+        9 ]
 
-    match client1_tcs.Task.Result with
-    | Error error -> failwithf "%A" error
-    | Ok ok ->
-        match ok with
-        | "Hello hi" ->() 
-        | _ -> failwith "did not append"
+  let server = start_server_with_implementations implementation_list
+  let client1_tcs = start_client_with_implementations server.port implementation_list
 
-    ()
+  match client1_tcs.Task.Result with
+  | Error error -> failwithf "%A" error
+  | Ok ok ->
+    match ok with
+    | "Hello hi" -> ()
+    | _ -> failwith "did not append"
+
+  ()
