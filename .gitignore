@@ -1,5 +1,11 @@
+.vscode/*
+**/.vscode
 _build
 *.install
 *.merlin
 _opam
-
+*/bin
+*/obj
+*/ModuleSignatures.generated
+**/bin
+**/obj

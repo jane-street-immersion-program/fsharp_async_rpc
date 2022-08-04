@@ -22,8 +22,8 @@
          </ItemGroup>
 
          <ItemGroup>
-             <ProjectReference Include="../../../../lib/dotnet-libs/bin_prot/src/Bin_prot.fsproj" />
-    <ProjectReference Include="../../../../lib/dotnet-libs/core_kernel/generated/Core_kernel.Bin_prot_generated_types.fsproj" />
+             <ProjectReference Include="../../fsharp_bin_prot/src/Bin_prot.fsproj" />
+    <ProjectReference Include="../../fsharp_core_kernel/generated/Core_kernel.Bin_prot_generated_types.fsproj" />
          </ItemGroup>
 
          <Target Name="CleanOutputDirs" AfterTargets="Clean">

@@ -130,8 +130,7 @@ module Streaming_rpc =
           let data =
             Bin_prot_reader.read_and_verify_length
               Stream_response_data.bin_reader_nat0_t
-              (Some
-                (function
+              (Some (function
                 | Stream_response_data.t.Eof -> 0
                 | Stream_response_data.t.Ok len -> len))
               read_buffer

@@ -52,15 +52,14 @@ let ``Connection errors out on handshake timeout`` () =
   let connection_task =
     let task = System.Threading.Tasks.TaskCompletionSource<_>()
 
-    Thread.spawn_and_ignore
-      "test connection creation thread"
-      (fun () ->
-        Connection.create
-          connection_stream
-          time_source
-          Known_protocol.Rpc
-          {| max_message_size = Transport.default_max_message_size |}
-          task.SetResult)
+    Thread.spawn_and_ignore "test connection creation thread" (fun () ->
+      Connection.create
+        connection_stream
+        time_source
+        Known_protocol.Rpc
+        {| max_message_size = Transport.default_max_message_size |}
+        task.SetResult
+        [])
 
     task.Task
 
@@ -136,7 +135,7 @@ let ``Connection sends heartbeats after fixed period`` () =
     Connection.For_testing.send_heartbeat_every
     - epsilon
 
-  for (_ : int) in 1 .. 10 do
+  for (_ : int) in 1..10 do
     time_source.advance_after_sleep_by period_minus_epsilon
 
     // Even though we almost hit the heartbeat period, no heartbeat has been sent yet.
@@ -192,6 +191,7 @@ let ``Connection can handshake, send queries, and handle hard-coded responses`` 
       data = Ok response_text }
 
   let response_with_length_only = Response.map_data response Bin_prot.Size.bin_size_string
+
   let responses_to_send = 10
 
   let responses_received = ref 0

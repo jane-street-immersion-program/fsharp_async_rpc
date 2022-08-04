@@ -49,7 +49,7 @@ module Reader =
     t ->
     on_message : (byte [] -> 'a Handler_result.t) ->
     on_end_of_batch : (unit -> unit) ->
-    Result<'a, Error.t>
+      Result<'a, Error.t>
 
   val read_one_message_bin_prot :
     t -> 'a Bin_prot.Type_class.reader -> Result<'a, Error.t>
@@ -68,7 +68,6 @@ module Writer =
   val close : t -> unit
   val is_close_started : t -> bool
   val set_close_finished_callback : t -> (Close_reason.t -> unit) -> unit
-
   val send_bin_prot : t -> 'a Bin_prot.Type_class.writer -> 'a -> unit Send_result.t
   val send_bin_prot_exn : t -> 'a Bin_prot.Type_class.writer -> 'a -> unit
 

@@ -69,7 +69,9 @@ let assert_stream_has_exactly stream messages =
 [<Test>]
 let ``Reader can parse [bin_prot]ed messages and use [read_one_message_bin_prot]`` () =
   let messages = [ "hello"; "world"; "test" ]
+
   let stream = create_stream_with_messages (List.map string_to_bin_prot_array messages)
+
   assert_stream_has_exactly stream messages
 
 [<Test>]
@@ -112,10 +114,9 @@ let ``The reader can parse bin-io sent from a writer`` () =
       Sexp.Atom "lorem ipsum" ]
 
   sexps
-  |> Seq.iter
-       (fun sexp ->
-         let result = Writer.send_bin_prot transport.writer Sexp.bin_writer_t sexp
-         Assert.AreEqual(result, Send_result.Sent()))
+  |> Seq.iter (fun sexp ->
+    let result = Writer.send_bin_prot transport.writer Sexp.bin_writer_t sexp
+    Assert.AreEqual(result, Send_result.Sent()))
 
   Writer.For_testing.wait_for_flushed transport.writer
 
@@ -158,7 +159,7 @@ let ``Writer errors if size too large`` () =
 // each read for the purposes of testing [on_end_of_batch] below.
 type Slow_memory_stream () =
   inherit System.IO.MemoryStream ()
-  override this.Read(buffer, pos, (_length : int)) = base.Read(buffer, pos, 1)
+  override this.Read(buffer, pos, (_length : int)) = ``base``.Read(buffer, pos, 1)
 
 [<Test>]
 let ``The reader calls 'on_end_of_batch' after any data from the stream`` () =
@@ -223,6 +224,7 @@ let ``Writes don't work after the writer is closed`` () =
   Assert.AreEqual(true, Writer.is_close_started writer)
 
   let result = Writer.send_bin_prot writer Bin_prot.Type_class.bin_writer_string message
+
   Assert.AreEqual(Send_result.Close_started Close_reason.By_user, result)
 
   Assert.AreEqual(Close_reason.By_user, close_finished.Task.Result)
@@ -276,7 +278,7 @@ type Blockable_memory_stream () =
 
   override this.Write(buffer, offset, count) =
     ignore (writes_go_through_event.WaitOne() : bool)
-    base.Write(buffer, offset, count)
+    ``base``.Write(buffer, offset, count)
 
 [<Test>]
 let ``Stream writing can be blocked without blocking [send_bin_prot]`` () =

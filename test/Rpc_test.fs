@@ -53,13 +53,9 @@ let ``Can send RPCs and pass responses to handler`` () =
   let pending_received_responses = new CountdownEvent(num_dispatches)
 
   let dispatch_and_expect i =
-    Rpc.dispatch
-      rpc
-      connection
-      (query_data i)
-      (fun result ->
-        Assert.AreEqual(Ok(response_data i), result)
-        ignore (pending_received_responses.Signal() : bool))
+    Rpc.dispatch rpc connection (query_data i) (fun result ->
+      Assert.AreEqual(Ok(response_data i), result)
+      ignore (pending_received_responses.Signal() : bool))
     |> Result.ok_exn
 
   let dispatch_indices = List.init num_dispatches id
@@ -73,12 +69,11 @@ let ``Can send RPCs and pass responses to handler`` () =
 
   // Send responses in reverse order to test multiplexing
   List.rev received_queries
-  |> List.iter
-       (fun (i, query) ->
-         Test_connection.send_string_response
-           test_connection
-           { id = query.id
-             data = Ok(response_data i) })
+  |> List.iter (fun (i, query) ->
+    Test_connection.send_string_response
+      test_connection
+      { id = query.id
+        data = Ok(response_data i) })
 
   pending_received_responses.Wait()
 
@@ -97,6 +92,7 @@ let ``Can send pipe RPCs and pass responses to handler`` () =
   let test_connection, connection = Test_connection.create_with_fixed_time_source ()
 
   let query_data query_i = sprintf "query-%d" query_i
+
   let response_data query_i response_i = sprintf "response-%d-%d" query_i response_i
 
   let responses_per_query = 10
@@ -140,12 +136,10 @@ let ``Can send pipe RPCs and pass responses to handler`` () =
             { bin_writer_error = bin_error.writer
               query_id = query.id
               response = Ok() } ]
-        @ List.init
-            responses_per_query
-            (fun response_i ->
-              Pipe_response.Update
-                { query_id = query.id
-                  response = Stream_response_data.t.Ok(response_data query_i response_i) })
+        @ List.init responses_per_query (fun response_i ->
+            Pipe_response.Update
+              { query_id = query.id
+                response = Stream_response_data.t.Ok(response_data query_i response_i) })
           @ [ Pipe_response.Update
                 { query_id = query.id
                   response = Stream_response_data.t.Eof } ])
