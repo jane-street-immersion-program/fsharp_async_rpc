@@ -326,7 +326,6 @@ module Query = struct
     }
 end
 module Response = struct
-(*TODO*)
   type 'a needs_length = {
     id: Query_id.t ;
     data: 'a Rpc_result.t }

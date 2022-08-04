@@ -5,6 +5,7 @@ open Async_rpc.Protocol
 open Bin_prot.Common
 open Async_rpc
 open Transport
+open Core_kernel.Bin_prot_generated_types.Lib.Dotnet.Core_with_dotnet.Src
 
 type 'connection_state t =
   { rpc_tag : Rpc_tag.t
@@ -38,35 +39,33 @@ let implementation_write
         len
         "client-side rpc response un-bin-io'ing"
 
-    task {
-      let (resp : Or_error.t<'response>) =
+    async {
+      let resp =
+        //could the string here be anything and it would work?
         Core_kernel.Or_error.try_with (fun () -> f connection_state query_)
+        |> Result.mapError (fun error ->
+          Protocol.Rpc_error.t.Uncaught_exn(Sexp.t.Atom(sprintf "%A" error)))
 
-      match resp with
-      | Ok resp ->
-        let result : _ Response.t = { id = query.id; data = Ok resp } in
+      let result : _ Response.t = { id = query.id; data = resp } in
 
-        let result =
-          Transport.Writer.send_bin_prot
-            transport_writer
-            (Message.bin_writer_needs_length (
-              Writer_with_length.of_writer response_writer
-            ))
-            (Message.t.Response result)
-          |> Transport.Send_result.to_or_error
+      let result =
+        Transport.Writer.send_bin_prot
+          transport_writer
+          (Message.bin_writer_needs_length (Writer_with_length.of_writer response_writer))
+          (Message.t.Response result)
+        |> Transport.Send_result.to_or_error
 
-        match result with
-        | Ok () -> printfn "Write successful"
-        | Error error ->
-          //error only occurs when theres an issue with the connection, in which case the connection will close,
-          //this is why we ignore the error values
-          printfn ("Write error: %A") error
-          Writer.close transport_writer
+      match result with
+      | Ok () -> printfn "Write successful"
       | Error error ->
-        printfn ("Implementation error:%A") error
-        return ()
+        //error only occurs when theres an issue with the connection, in which case the connection will close,
+        //this is why we ignore the error values
+        printfn ("Write error: %A") error
+        Writer.close transport_writer
+
+      return ()
     }
-    |> ignore
+    |> Async.Start
 
     return ()
   }
